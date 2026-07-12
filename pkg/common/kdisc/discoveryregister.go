@@ -22,6 +22,8 @@ import (
 	"github.com/openimsdk/tools/discovery/etcd"
 	"github.com/openimsdk/tools/discovery/kubernetes"
 	"github.com/openimsdk/tools/errs"
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"google.golang.org/grpc"
 )
 
 const (
@@ -38,13 +40,21 @@ func NewDiscoveryRegister(discovery *config.Discovery, runtimeEnv string, watchN
 
 	switch discovery.Enable {
 	case ETCDCONST:
-		return etcd.NewSvcDiscoveryRegistry(
+		registry, err := etcd.NewSvcDiscoveryRegistry(
 			discovery.Etcd.RootDirectory,
 			discovery.Etcd.Address,
 			watchNames,
 			etcd.WithDialTimeout(10*time.Second),
 			etcd.WithMaxCallSendMsgSize(20*1024*1024),
-			etcd.WithUsernameAndPassword(discovery.Etcd.Username, discovery.Etcd.Password))
+			etcd.WithUsernameAndPassword(discovery.Etcd.Username, discovery.Etcd.Password),
+			func(config *clientv3.Config) {
+				config.DialOptions = append(config.DialOptions, grpc.WithNoProxy())
+			})
+		if err != nil {
+			return nil, err
+		}
+		registry.AddOption(grpc.WithNoProxy())
+		return registry, nil
 	default:
 		return nil, errs.New("unsupported discovery type", "type", discovery.Enable).Wrap()
 	}
