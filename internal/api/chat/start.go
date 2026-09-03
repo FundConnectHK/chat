@@ -74,6 +74,9 @@ func Start(ctx context.Context, index int, cfg *Config) error {
 	gin.SetMode(gin.ReleaseMode)
 	engine := gin.New()
 	engine.Use(gin.Recovery(), mw.CorsHandler(), mw.GinParseOperationID())
+	engine.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
 	SetChatRoute(engine, adminApi, mwApi)
 
 	var (
