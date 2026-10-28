@@ -78,8 +78,11 @@ message SearchAdminAccountResp {
 }
 
 message GetAdminInfoResp {
+  // Authentication credentials must never be part of an administrator profile.
+  reserved 3;
+  reserved "password";
+
   string account = 2;
-  string password = 3;
   string faceURL = 4;
   string nickname = 5;
   string userID = 6;
